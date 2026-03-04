@@ -8,6 +8,20 @@ import {
   fetchOverdueTasks
 } from "../api";
 import { MetricCard } from "../components/MetricCard";
+import { 
+  CheckCircle2, 
+  Clock, 
+  AlertTriangle, 
+  ListChecks,
+  User,
+  Loader2,
+  CalendarDays
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Badge } from "../components/ui/badge";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { cn } from "../lib/utils";
 
 export function TasksPage() {
   const [summary, setSummary] = useState<TasksSummary | null>(null);
@@ -31,7 +45,7 @@ export function TasksPage() {
         setError(null);
       } catch (e) {
         console.error(e);
-        setError("Не удалось загрузить аналитику задач");
+        setError("Unable to sync task analytics.");
       } finally {
         setLoading(false);
       }
@@ -40,125 +54,165 @@ export function TasksPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-sm text-textMuted">Загружаем задачи...</div>;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 animate-fade-in">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          Parsing Task Discipline...
+        </p>
+      </div>
+    );
   }
+
   if (error || !summary) {
-    return <div className="text-sm text-rose-400">{error ?? "Нет данных"}</div>;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+        <AlertTriangle className="w-10 h-10 text-destructive" />
+        <p className="text-sm text-muted-foreground">{error ?? "No task data found"}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-[0.3em] text-textMuted">
-            Задачи
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <ListChecks className="w-3.5 h-3.5" />
+            Operational Workflow
           </div>
-          <div className="text-lg font-semibold">
-            Дисциплина выполнения задач
-          </div>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Task Discipline</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Всего задач"
+          title="Total Tasks"
           value={summary.total_tasks.toString()}
-          subtitle={`Выполнено: ${summary.completed}, просрочено: ${summary.overdue}`}
+          icon={ListChecks}
+          subtitle={`Completed: ${summary.completed} • Overdue: ${summary.overdue}`}
         />
         <MetricCard
-          title="Выполнение"
-          value={summary.completion_rate_pct.toFixed(1) + " %"}
-          subtitle="От всех задач"
+          title="Completion Rate"
+          value={summary.completion_rate_pct.toFixed(1) + "%"}
+          icon={CheckCircle2}
+          subtitle="General team efficiency"
           positive={summary.completion_rate_pct >= 80}
         />
         <MetricCard
-          title="В срок"
-          value={summary.on_time_rate_pct.toFixed(1) + " %"}
-          subtitle="Из выполненных"
+          title="On-Time Delivery"
+          value={summary.on_time_rate_pct.toFixed(1) + "%"}
+          icon={Clock}
+          subtitle="Tasks finished before deadline"
           positive={summary.on_time_rate_pct >= 80}
         />
         <MetricCard
-          title="Просрочки"
-          value={summary.overdue_rate_pct.toFixed(1) + " %"}
-          subtitle="Доля просроченных задач"
+          title="Critical Overdue"
+          value={summary.overdue_rate_pct.toFixed(1) + "%"}
+          icon={AlertTriangle}
+          subtitle="Percentage of failed deadlines"
           positive={summary.overdue_rate_pct <= 20}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="overflow-x-auto rounded-2xl border border-borderSoft bg-bgElevated">
-          <table className="min-w-full text-sm">
-            <thead className="bg-black/40 text-xs uppercase text-textMuted">
-              <tr>
-                <th className="px-4 py-3 text-left">Менеджер</th>
-                <th className="px-4 py-3 text-right">Всего</th>
-                <th className="px-4 py-3 text-right">Выполнено</th>
-                <th className="px-4 py-3 text-right">Просрочено</th>
-                <th className="px-4 py-3 text-right">В срок</th>
-                <th className="px-4 py-3 text-right">Просрочки %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byManager.map(row => (
-                <tr
-                  key={row.user_id}
-                  className="border-t border-borderSoft/60 hover:bg-white/5 transition"
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{row.user_name}</div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {row.total_tasks}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {row.completed}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {row.overdue}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {row.on_time_rate_pct.toFixed(1)} %
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {row.overdue_rate_pct.toFixed(1)} %
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card className="rounded-3xl border-border/50 bg-card shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b border-border/40 py-4 px-6">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <User className="w-3.5 h-3.5 text-primary" />
+                Performance by Manager
+              </CardTitle>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-border/40">
+                    <TableHead className="text-[10px] font-bold uppercase tracking-wider pl-6">Manager</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider">Total</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider">Done</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider text-rose-500">Late</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider pr-6">Efficiency</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {byManager.map((row) => (
+                    <TableRow key={row.user_id} className="hover:bg-muted/20 border-border/40 group">
+                      <TableCell className="py-4 pl-6 font-bold text-sm group-hover:text-primary transition-colors">
+                        {row.user_name}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs">{row.total_tasks}</TableCell>
+                      <TableCell className="text-right font-mono text-xs">{row.completed}</TableCell>
+                      <TableCell className="text-right font-mono text-xs text-rose-500 font-bold">{row.overdue}</TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Badge variant="outline" className={cn(
+                          "rounded-lg px-2 font-mono text-[10px] font-bold",
+                          row.on_time_rate_pct >= 80 ? "border-emerald-500/50 text-emerald-500" : "border-amber-500/50 text-amber-500"
+                        )}>
+                          {row.on_time_rate_pct.toFixed(1)}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         </div>
 
-        <div className="rounded-2xl border border-borderSoft bg-bgElevated p-4 text-xs">
-          <div className="font-semibold text-sm text-white mb-2">
-            Топ просроченных задач
-          </div>
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scroll">
-            {overdue.map(task => (
-              <div
-                key={task.task_id}
-                className="border border-borderSoft/60 rounded-xl p-3 bg-black/20"
-              >
-                <div className="flex justify-between text-[11px] text-textMuted mb-1">
-                  <span>{task.user_name}</span>
-                  {task.overdue_hours != null && (
-                    <span className="text-rose-400">
-                      +{task.overdue_hours.toFixed(1)} ч
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-white mb-1">{task.text}</div>
-                <div className="text-[11px] text-textMuted">
-                  Тип: {task.task_type}, до{" "}
-                  {new Date(task.complete_till).toLocaleString("ru-RU")}
-                </div>
+        <div className="space-y-6">
+          <Card className="rounded-3xl border-border/50 bg-card shadow-sm overflow-hidden h-full flex flex-col">
+            <CardHeader className="bg-destructive/5 border-b border-border/40 py-4 px-6">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-rose-500">
+                <Clock className="w-3.5 h-3.5" />
+                High Priority Overdue
+              </CardTitle>
+            </CardHeader>
+            <ScrollArea className="flex-1 max-h-[500px]">
+              <div className="p-4 space-y-3">
+                {overdue.map((task) => (
+                  <div
+                    key={task.task_id}
+                    className="p-4 rounded-2xl bg-muted/30 border border-border/40 hover:border-primary/30 transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground group-hover:text-primary transition-colors">
+                        {task.user_name}
+                      </span>
+                      {task.overdue_hours != null && (
+                        <Badge variant="destructive" className="h-5 px-1.5 text-[9px] font-black rounded-md">
+                          +{task.overdue_hours.toFixed(0)}H LATE
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold leading-relaxed mb-3 text-foreground/90">
+                      {task.text}
+                    </p>
+                    <div className="flex items-center gap-3 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" />
+                        Due: {new Date(task.complete_till).toLocaleDateString("ru-RU")}
+                      </span>
+                      <span className="px-1.5 py-0.5 bg-muted rounded border border-border/50">
+                        {task.task_type}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {overdue.length === 0 && (
+                  <div className="py-12 flex flex-col items-center justify-center text-center px-6">
+                    <div className="bg-emerald-500/10 p-4 rounded-full mb-4">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">Zero Overdue Tasks</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-bold">
+                      Exceptional team discipline
+                    </p>
+                  </div>
+                )}
               </div>
-            ))}
-            {overdue.length === 0 && (
-              <div className="text-textMuted text-xs">
-                Просроченных задач нет — отличная дисциплина.
-              </div>
-            )}
-          </div>
+            </ScrollArea>
+          </Card>
         </div>
       </div>
     </div>

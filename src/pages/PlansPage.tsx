@@ -6,6 +6,29 @@ import {
   updatePlan,
   deletePlan
 } from "../api";
+import { 
+  Target, 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Calendar, 
+  User, 
+  Layers, 
+  BarChart3,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  X
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Badge } from "../components/ui/badge";
+import { cn } from "../lib/utils";
 
 const METRICS = [
   "revenue",
@@ -56,7 +79,7 @@ export function PlansPage() {
       setError(null);
     } catch (e) {
       console.error(e);
-      setError("Не удалось загрузить планы");
+      setError("Unable to sync strategic plans.");
     } finally {
       setLoading(false);
     }
@@ -64,13 +87,9 @@ export function PlansPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleChange(
-    field: keyof FormState,
-    value: string | number
-  ) {
+  function handleChange(field: keyof FormState, value: string | number) {
     setForm(prev => ({ ...prev, [field]: value as any }));
   }
 
@@ -103,23 +122,20 @@ export function PlansPage() {
       await load();
     } catch (err: any) {
       console.error(err);
-      const msg =
-        err?.response?.data?.detail ||
-        "Ошибка при сохранении плана";
-      setError(msg);
+      setError(err?.response?.data?.detail || "System error during plan preservation.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Удалить этот план?")) return;
+    if (!confirm("Are you sure you want to decommission this strategic plan?")) return;
     try {
       await deletePlan(id);
       await load();
     } catch (e) {
       console.error(e);
-      setError("Не удалось удалить план");
+      setError("Unable to decommission plan.");
     }
   }
 
@@ -137,235 +153,228 @@ export function PlansPage() {
   }
 
   return (
-    <div className="space-y-5 text-sm">
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-[0.3em] text-textMuted">
-            Планы
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <Target className="w-3.5 h-3.5" />
+            Performance Objectives
           </div>
-          <div className="text-lg font-semibold">
-            Плановые показатели по периоду/менеджерам
-          </div>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Strategic Planning</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 overflow-x-auto rounded-2xl border border-borderSoft bg-bgElevated">
-          {loading ? (
-            <div className="p-4 text-textMuted">Загружаем планы...</div>
-          ) : (
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/40 text-xs uppercase text-textMuted">
-                <tr>
-                  <th className="px-4 py-3 text-left">Период</th>
-                  <th className="px-4 py-3 text-left">User / Pipeline</th>
-                  <th className="px-4 py-3 text-left">Метрика</th>
-                  <th className="px-4 py-3 text-right">Цель</th>
-                  <th className="px-4 py-3 text-left">Комментарий</th>
-                  <th className="px-4 py-3 text-right">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plans.map(p => (
-                  <tr
-                    key={p.id}
-                    className="border-t border-borderSoft/60 hover:bg-white/5 transition"
-                  >
-                    <td className="px-4 py-3">
-                      {String(p.period_month).padStart(2, "0")}.{p.period_year}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-xs text-textMuted">
-                        User: {p.user_id ?? "все"}
-                      </div>
-                      <div className="text-xs text-textMuted">
-                        Pipeline: {p.pipeline_id ?? "все"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{p.metric_type}</td>
-                    <td className="px-4 py-3 text-right">
-                      {p.target_value.toLocaleString("ru-RU")}
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.notes ?? <span className="text-textMuted">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <button
-                        onClick={() => startEdit(p)}
-                        className="px-2 py-1 rounded border border-borderSoft text-xs hover:border-accent"
-                      >
-                        Редактировать
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="px-2 py-1 rounded border border-rose-500/60 text-xs text-rose-300 hover:bg-rose-600/20"
-                      >
-                        Удалить
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {plans.length === 0 && !loading && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-4 text-center text-textMuted"
-                    >
-                      Планов для этого периода пока нет.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="rounded-3xl border-border/50 bg-card shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b border-border/40 py-4 px-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                Active Objectives List
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={load} className="h-8 gap-2 text-[10px] font-bold uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
+                <Loader2 className={cn("w-3 h-3", loading && "animate-spin")} />
+                Refresh
+              </Button>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-border/40">
+                    <TableHead className="text-[10px] font-bold uppercase tracking-wider pl-6">Timeline</TableHead>
+                    <TableHead className="text-[10px] font-bold uppercase tracking-wider">Context</TableHead>
+                    <TableHead className="text-[10px] font-bold uppercase tracking-wider text-center">Metric</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider">Target</TableHead>
+                    <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {plans.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-muted/20 border-border/40 group">
+                      <TableCell className="py-4 pl-6">
+                        <div className="flex items-center gap-2 font-mono text-xs font-bold text-foreground">
+                          <Calendar className="w-3 h-3 text-muted-foreground" />
+                          {String(p.period_month).padStart(2, "0")}/{p.period_year}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <User className="w-3 h-3" />
+                            {p.user_id ? `User: ${p.user_id}` : "Account Wide"}
+                          </div>
+                          <div className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <Layers className="w-3 h-3" />
+                            {p.pipeline_id ? `Pipe: ${p.pipeline_id}` : "Global Pipeline"}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="rounded-lg px-2 text-[10px] font-bold uppercase tracking-tighter border-primary/20 text-primary bg-primary/5">
+                          {p.metric_type.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs font-black text-foreground">
+                        {p.target_value.toLocaleString("ru-RU")}
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(p)} className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {plans.length === 0 && !loading && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-12 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="bg-muted/50 p-4 rounded-full">
+                            <Target className="w-8 h-8 text-muted-foreground/40" />
+                          </div>
+                          <p className="text-sm font-bold text-muted-foreground">No active objectives detected</p>
+                          <p className="text-[10px] uppercase font-black text-muted-foreground/60 tracking-widest">Initialization Required</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border border-borderSoft bg-bgElevated p-4 space-y-3"
-        >
-          <div className="text-xs uppercase tracking-[0.3em] text-textMuted">
-            {editingId ? "Редактировать план" : "Новый план"}
-          </div>
-          {error && (
-            <div className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/40 rounded-lg px-2 py-1">
-              {error}
+        <div className="space-y-6">
+          <Card className="rounded-3xl border-border/50 bg-card shadow-lg overflow-hidden border-t-4 border-t-primary">
+            <CardHeader className="py-4 px-6 border-b border-border/40 flex flex-row items-center justify-between">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                {editingId ? <Pencil className="w-3.5 h-3.5 text-primary" /> : <Plus className="w-3.5 h-3.5 text-primary" />}
+                {editingId ? "Update Objective" : "New Objective"}
+              </CardTitle>
+              {editingId && (
+                <Button variant="ghost" size="icon" onClick={() => { setEditingId(null); setForm(prev => ({ ...prev, target_value: "", notes: "" })); }} className="h-6 w-6 rounded-md">
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+                    <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                    <p className="text-[10px] font-bold text-destructive leading-normal">{error}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Fiscal Year</Label>
+                    <Input 
+                      type="number" 
+                      value={form.period_year}
+                      onChange={e => handleChange("period_year", Number(e.target.value))}
+                      className="h-10 bg-muted/30 border-border/50 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Fiscal Month</Label>
+                    <Input 
+                      type="number" 
+                      min={1} max={12}
+                      value={form.period_month}
+                      onChange={e => handleChange("period_month", Number(e.target.value))}
+                      className="h-10 bg-muted/30 border-border/50 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">User Assignment</Label>
+                    <Input 
+                      placeholder="Account Wide" 
+                      value={form.user_id}
+                      onChange={e => handleChange("user_id", e.target.value)}
+                      className="h-10 bg-muted/30 border-border/50 rounded-xl text-[10px] font-bold uppercase placeholder:lowercase"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pipeline Link</Label>
+                    <Input 
+                      placeholder="Global Pipe" 
+                      value={form.pipeline_id}
+                      onChange={e => handleChange("pipeline_id", e.target.value)}
+                      className="h-10 bg-muted/30 border-border/50 rounded-xl text-[10px] font-bold uppercase placeholder:lowercase"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Target Metric</Label>
+                  <Select value={form.metric_type} onValueChange={(val) => handleChange("metric_type", val)}>
+                    <SelectTrigger className="h-10 bg-muted/30 border-border/50 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-xl">
+                      {METRICS.map(m => (
+                        <SelectItem key={m} value={m} className="text-[10px] font-bold uppercase tracking-wider">{m.replace("_", " ")}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Objective Target</Label>
+                  <Input 
+                    type="number" step="0.01" 
+                    value={form.target_value}
+                    onChange={e => handleChange("target_value", e.target.value)}
+                    placeholder="0.00"
+                    required
+                    className="h-10 bg-muted/30 border-border/50 rounded-xl text-xs font-black placeholder:text-muted-foreground/30"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Strategic Notes</Label>
+                  <Textarea 
+                    value={form.notes}
+                    onChange={e => handleChange("notes", e.target.value)}
+                    rows={3}
+                    className="bg-muted/30 border-border/50 rounded-xl text-xs font-medium resize-none"
+                    placeholder="Operational context..."
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={saving}
+                  className="w-full h-11 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-elegant font-black uppercase tracking-[0.1em] text-[10px] transition-all active:scale-[0.98]"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? "Finalize Update" : "Deploy Objective")}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <div className="p-6 bg-emerald-500/5 rounded-3xl border border-emerald-500/10">
+            <div className="flex gap-4">
+              <div className="bg-emerald-500/10 p-3 rounded-2xl h-fit">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <h5 className="text-xs font-black text-foreground uppercase tracking-widest">Active Controls</h5>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                  Changes to objectives will synchronize across all management dashboards in real-time.
+                </p>
+              </div>
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[11px] text-textMuted mb-1">
-                Год
-              </label>
-              <input
-                type="number"
-                value={form.period_year}
-                onChange={e =>
-                  handleChange("period_year", Number(e.target.value))
-                }
-                className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-textMuted mb-1">
-                Месяц
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={form.period_month}
-                onChange={e =>
-                  handleChange("period_month", Number(e.target.value))
-                }
-                className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-              />
-            </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[11px] text-textMuted mb-1">
-                User ID (опц.)
-              </label>
-              <input
-                type="text"
-                value={form.user_id}
-                onChange={e => handleChange("user_id", e.target.value)}
-                placeholder="пусто = все"
-                className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-textMuted mb-1">
-                Pipeline ID (опц.)
-              </label>
-              <input
-                type="text"
-                value={form.pipeline_id}
-                onChange={e => handleChange("pipeline_id", e.target.value)}
-                placeholder="пусто = все"
-                className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-textMuted mb-1">
-              Метрика
-            </label>
-            <select
-              value={form.metric_type}
-              onChange={e =>
-                handleChange("metric_type", e.target.value as MetricType)
-              }
-              className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-            >
-              {METRICS.map(m => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-textMuted mb-1">
-              Целевое значение
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.target_value}
-              onChange={e => handleChange("target_value", e.target.value)}
-              required
-              className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-textMuted mb-1">
-              Комментарий
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={e => handleChange("notes", e.target.value)}
-              rows={3}
-              className="w-full rounded-md bg-bg border border-borderSoft px-2 py-1 text-xs resize-none"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-3 py-2 rounded-md bg-accent text-xs font-semibold hover:bg-indigo-500 disabled:opacity-60"
-            >
-              {saving
-                ? "Сохраняем..."
-                : editingId
-                ? "Обновить план"
-                : "Создать план"}
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(prev => ({
-                    ...prev,
-                    target_value: "",
-                    notes: ""
-                  }));
-                }}
-                className="px-3 py-2 rounded-md border border-borderSoft text-xs text-textMuted hover:border-accent"
-              >
-                Отмена
-              </button>
-            )}
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

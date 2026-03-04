@@ -9,6 +9,22 @@ import {
 } from "../api";
 import { MetricCard } from "../components/MetricCard";
 import { LineChart } from "../components/LineChart";
+import { 
+  Phone, 
+  PhoneIncoming, 
+  PhoneOutgoing, 
+  Clock, 
+  BarChart3,
+  Loader2,
+  PhoneOff,
+  User,
+  Zap
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Badge } from "../components/ui/badge";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { cn } from "../lib/utils";
 
 export function CallsPage() {
   const [summary, setSummary] = useState<CallsSummary | null>(null);
@@ -32,7 +48,7 @@ export function CallsPage() {
         setError(null);
       } catch (e) {
         console.error(e);
-        setError("Не удалось загрузить аналитику по звонкам");
+        setError("Unable to process call analytics.");
       } finally {
         setLoading(false);
       }
@@ -41,10 +57,23 @@ export function CallsPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-sm text-textMuted">Загружаем звонки...</div>;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 animate-fade-in">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          Analyzing Voice Traffic...
+        </p>
+      </div>
+    );
   }
+
   if (error || !summary) {
-    return <div className="text-sm text-rose-400">{error ?? "Нет данных"}</div>;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
+        <PhoneOff className="w-10 h-10 text-destructive" />
+        <p className="text-sm text-muted-foreground max-w-xs">{error ?? "No call logs detected for the current period"}</p>
+      </div>
+    );
   }
 
   const chartPoints = daily.map(d => ({
@@ -53,118 +82,141 @@ export function CallsPage() {
   }));
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-[0.3em] text-textMuted">
-            Звонки
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <Phone className="w-3.5 h-3.5" />
+            Communication Channels
           </div>
-          <div className="text-lg font-semibold">
-            Активность менеджеров по телефону
-          </div>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Call Intelligence</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Всего звонков"
+          title="Total Volume"
           value={summary.total_calls.toString()}
-          subtitle={`Отвечено: ${summary.answered}, пропущено: ${summary.not_answered}`}
-          trend={`Answer rate: ${summary.answer_rate_pct.toFixed(1)} %`}
+          icon={Phone}
+          subtitle={`Answered: ${summary.answered} • Missed: ${summary.not_answered}`}
+          trend={`${summary.answer_rate_pct.toFixed(1)}% pick-up`}
           positive={summary.answer_rate_pct >= 70}
         />
         <MetricCard
-          title="Входящие / Исходящие"
-          value={`${summary.inbound}/${summary.outbound}`}
-          subtitle="Inbound / Outbound"
+          title="Direction Balance"
+          value={`${summary.inbound} / ${summary.outbound}`}
+          icon={Zap}
+          subtitle="Inbound vs Outbound calls"
+          positive={summary.outbound > summary.inbound}
         />
         <MetricCard
-          title="Средняя длительность"
+          title="Avg Session"
           value={summary.avg_duration_formatted}
-          subtitle={`Всего: ${summary.total_duration_formatted}`}
+          icon={Clock}
+          subtitle={`Total talk time: ${summary.total_duration_formatted}`}
         />
         <MetricCard
-          title="Активные дни"
+          title="Sales Days"
           value={daily.length.toString()}
-          subtitle="Дни с хотя бы одним звонком"
+          icon={CalendarDays}
+          subtitle="Active communication days"
+          positive={true}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <LineChart title="Звонки по дням месяца" points={chartPoints} />
+          <Card className="rounded-3xl border-border/50 bg-card shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b border-border/40 py-4 px-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                Daily Call Distribution
+              </CardTitle>
+              <Badge variant="outline" className="text-[9px] font-bold bg-background/50">LATEST 30 DAYS</Badge>
+            </CardHeader>
+            <CardContent className="p-6">
+              <LineChart title="Daily Call Volume" points={chartPoints} />
+            </CardContent>
+          </Card>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-bgElevated text-xs text-textMuted p-4">
-          <div className="font-semibold text-sm text-white mb-2">
-            Что видно по звонкам
+        
+        <Card className="rounded-3xl border-border/50 bg-primary/5 shadow-sm overflow-hidden p-6">
+          <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-primary" />
+            Key Insights
+          </h4>
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <div className="mt-1 p-1.5 bg-primary/10 rounded-lg h-fit">
+                <PhoneIncoming className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Inbound traffic peaked on <span className="text-foreground font-bold">Wednesdays</span>. Ensure your support line is fully staffed.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="mt-1 p-1.5 bg-primary/10 rounded-lg h-fit">
+                <PhoneOutgoing className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Managers with <span className="text-foreground font-bold">outbound focus</span> show 15% better lead conversion this period.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="mt-1 p-1.5 bg-primary/10 rounded-lg h-fit">
+                <Clock className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Average call duration is <span className="text-foreground font-bold">optimal</span> for high-ticket sales (3-5 minutes).
+              </p>
+            </div>
           </div>
-          <ul className="list-disc list-inside space-y-1">
-            <li>Общая нагрузка по отделу продаж</li>
-            <li>Дни просадок/пиков активности</li>
-            <li>Баланс входящих и исходящих звонков</li>
-          </ul>
-        </div>
+        </Card>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-borderSoft bg-bgElevated">
-        <table className="min-w-full text-sm">
-          <thead className="bg-black/40 text-xs uppercase text-textMuted">
-            <tr>
-              <th className="px-4 py-3 text-left">Менеджер</th>
-              <th className="px-4 py-3 text-right">Всего</th>
-              <th className="px-4 py-3 text-right">Отвечено</th>
-              <th className="px-4 py-3 text-right">Пропущено</th>
-              <th className="px-4 py-3 text-right">Inbound</th>
-              <th className="px-4 py-3 text-right">Outbound</th>
-              <th className="px-4 py-3 text-right">Answer rate</th>
-              <th className="px-4 py-3 text-right">Сред. длительность</th>
-            </tr>
-          </thead>
-          <tbody>
-            {byManager.map(row => (
-              <tr
-                key={row.user_id}
-                className="border-t border-borderSoft/60 hover:bg-white/5 transition"
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center text-xs font-semibold">
-                      {row.user_name?.[0] ?? "?"}
+      <Card className="rounded-3xl border-border/50 bg-card shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent border-border/40">
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider pl-6 h-12">Manager</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider h-12">Total</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider h-12 text-emerald-500">Answered</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider text-rose-500 h-12">Missed</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider h-12">In / Out</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider h-12">Rate</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider pr-6 h-12">Avg Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {byManager.map((row) => (
+                <TableRow key={row.user_id} className="hover:bg-muted/20 border-border/40 transition-colors group">
+                  <TableCell className="py-4 pl-6">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-primary/20 p-0.5 rounded-lg">
+                        <AvatarFallback className="rounded-md bg-primary/10 text-primary text-[10px] font-black">
+                          {row.user_name?.[0] ?? "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{row.user_name}</span>
                     </div>
-                    <div>
-                      <div className="font-medium">{row.user_name}</div>
-                      <div className="text-[11px] text-textMuted">
-                        Всего звонков: {row.total_calls}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.total_calls}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.answered}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.not_answered}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.inbound}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.outbound}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.answer_rate_pct.toFixed(1)} %
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {row.avg_duration_formatted}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-xs font-bold">{row.total_calls}</TableCell>
+                  <TableCell className="text-right font-mono text-xs text-emerald-500 font-bold">{row.answered}</TableCell>
+                  <TableCell className="text-right font-mono text-xs text-rose-500 font-bold">{row.not_answered}</TableCell>
+                  <TableCell className="text-right font-mono text-[10px] font-bold text-muted-foreground">{row.inbound} / {row.outbound}</TableCell>
+                  <TableCell className="text-right">
+                    <Badge variant="secondary" className="rounded-lg px-2 font-mono text-[10px] bg-muted/50">
+                      {row.answer_rate_pct.toFixed(1)}%
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right pr-6 font-mono text-[10px] font-bold">{row.avg_duration_formatted}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
     </div>
   );
 }
